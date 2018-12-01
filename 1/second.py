@@ -1,16 +1,15 @@
-
 def solve(data):
     # memoize the first pass
     val = 0;
     memo = []
     for i in data:
-        if val in memo:
-            return val
         memo.append(val)
         val += i
+        if val in memo:
+            return val
     # increase values in memo by multiples of sum and check if a match is found
     s = sum(data)
-    n = 2
+    n = 1
     while True:
         for m in memo:
             if m + s*n in memo:
@@ -19,7 +18,7 @@ def solve(data):
 
 def read(filename):
     with open(filename, 'r') as f:
-        return [int(l.rstrip("\n")) for l in f.readlines()]
+        return [int(l) for l in f.readlines()]
 
 def main (filename):
     return solve(read(filename))
@@ -44,7 +43,7 @@ def naive(data):
             memo.append(val)
             val += i
 
-def lowMemory(data):
+def low_memory(data):
     # memoize the first pass through
     val = 0;
     memo = []

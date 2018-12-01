@@ -3,10 +3,10 @@ def solve(data):
 
 def read(filename):
     with open(filename, 'r') as f:
-        return [int(l.rstrip("\n")) for l in f.readlines()]
+        return [int(l) for l in f.readlines()]
 
 def main (filename):
-    return calc(read(filename))
+    return solve(read(filename))
 
 if __name__ == "__main__":
     import sys
