@@ -1,39 +1,36 @@
 def solve(data):
-    # memoize the first pass
-    val = 0
-    memo = []
-    for i in data:
-        memo.append(val)
-        val += i
-        if val in memo:
-            return val
-    # note val is sum(data) at this point and not 0 because then the function
-    # would already have returned
-    """
-    I realized that every loop the entries of memo would effectively increase
-    by sum(data).
-    
-    Therefore the problem is reduced to finding the first memo entry that has
-    the shortest distance to another in sum(data) sized steps.
-    
-    Two such entries x, y must therefore satisfy x % sum == y % sum.
-    """
-    step = val
-    bestDst = float('Inf')
-    best = float('NaN')
-    modded = [m % step for m in memo] # memoize memo % step
-    for k, x in enumerate(memo):
-        for l, y in enumerate(memo[:k]):
-            # make sure x and y are congruent modulo step
-            if modded[l] != modded[k]:
-                continue
-            if abs(x - y) < bestDst:
+    step = sum(data)
+    # special case: the process loops at exactly the max length
+    if step == 0:
+        x = 0;
+        memo = []
+        for i in data:
+            memo.append(x)
+            x += i
+            if (x in memo):
+                return x
+        print "Error: This shouldn't happen"
+        exit()
+
+    # normal cases
+    congruence = {} # congruence classes of x mod step
+    bestDst = float('Inf') # shortest distance between x and y
+    best = float('NaN') # the value that x or y becomes after bestDst
+    x = 0
+    for k, i in enumerate(data):
+        x += i
+        xm = x % step
+        if xm not in congruence:
+            congruence[xm] = []
+        for y in congruence[xm]:
+            if abs(x - y) < bestDst: # better solution found
                 bestDst = abs(x - y)
                 # determine which of x, y is the stop
                 if step > 0:
                     best = max(x, y) # positive steps => lower -> higher
                 else:
                     best = min(x, y) # negative steps => higher -> lower
+        congruence[xm] += [x]
     return best
 
 def read(filename):
@@ -100,9 +97,6 @@ def multiples(data):
         n += 1
 
 def modular(data): # solves the problem but fails tests
-    if len(data) == 0:
-        print "Error: No data"
-        exit()
     # memoize the first pass
     val = 0
     memo = []
@@ -114,28 +108,29 @@ def modular(data): # solves the problem but fails tests
     # note val is sum(data) at this point and not 0 because then the function
     # would already have returned
     """
-    I realized that every loop the entries would effectively increase by
-    sum(data).
+    I realized that every loop the entries of memo would effectively increase
+    by sum(data).
     
-    Therefore the problem is reduced to finding the first entry that has
+    Therefore the problem is reduced to finding the first memo entry that has
     the shortest distance to another in sum(data) sized steps.
     
     Two such entries x, y must therefore satisfy x % sum == y % sum.
     """
     step = val
-    bestDst = float('Inf') # best (shortest) recorded distance
-    bestKey = float('Inf') # key of the second entry with the best distance
-    best = float('NaN') # the value of the first entry with the best distance
-    modded = [i % step for i in memo]
-    for i in range(len(memo)):
-        for j in range(i):
-            if modded[i] == modded[j]:
-                dst = memo[j] - memo[i] / step
-                if dst < 0:
-                    continue
-                if dst < bestDst or (dst == bestDst and i < bestKey):
-                    bestDst = dst
-                    bestKey = i
-                    best = memo[j]
+    bestDst = float('Inf')
+    best = float('NaN')
+    modded = [m % step for m in memo] # memoize memo % step
+    for k, x in enumerate(memo):
+        for l, y in enumerate(memo[:k]):
+            # make sure x and y are congruent modulo step
+            if modded[l] != modded[k]:
+                continue
+            if abs(x - y) < bestDst:
+                bestDst = abs(x - y)
+                # determine which of x, y is the stop
+                if step > 0:
+                    best = max(x, y) # positive steps => lower -> higher
+                else:
+                    best = min(x, y) # negative steps => higher -> lower
     return best
 
