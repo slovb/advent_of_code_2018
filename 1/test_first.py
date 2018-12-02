@@ -1,12 +1,12 @@
 import unittest
-import first as target
+import first as solver
 
 class Tester(unittest.TestCase):
-    def testExample(self):
-        self.assertEqual(target.solve([1, -2, 3, 1]), 3)
-        self.assertEqual(target.solve([1, 1, 1]), 3)
-        self.assertEqual(target.solve([1, 1, -2]), 0)
-        self.assertEqual(target.solve([-1, -2, -3]), -6)
+    def test_example(self):
+        self.assertEqual(solver.solve([1, -2, 3, 1]), 3)
+        self.assertEqual(solver.solve([1, 1, 1]), 3)
+        self.assertEqual(solver.solve([1, 1, -2]), 0)
+        self.assertEqual(solver.solve([-1, -2, -3]), -6)
 
 if __name__ == '__main__':
     unittest.main()
