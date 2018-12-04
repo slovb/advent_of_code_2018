@@ -14,7 +14,6 @@ def sleepy(schedule):
         if sleeptime[guard] > worst:
             worst = sleeptime[guard]
             worstGuard = guard
-    print worstGuard
     return worstGuard
 
 def solve(schedule):
@@ -31,7 +30,7 @@ def solve(schedule):
             if minutes[m] > most:
                 most = minutes[m]
                 mostKey = m
-    return mostKey
+    return mostKey * guard
 
 def process(rows):
     """process the rows and build a schedule"""

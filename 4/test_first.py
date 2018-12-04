@@ -23,7 +23,7 @@ class Tester(unittest.TestCase):
             "[1518-11-05 00:55] wakes up",
         ])
         self.assertEqual(solver.sleepy(data), 10)
-        self.assertEqual(solver.solve(data), 24)
+        self.assertEqual(solver.solve(data), 24*10)
 
 if __name__ == '__main__':
     unittest.main()
