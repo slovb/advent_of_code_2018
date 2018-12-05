@@ -21,7 +21,7 @@ def read(filename):
     with open(filename, 'r') as f:
         return f.readlines()
 
-def main (filename):
+def main(filename):
     return solve(read(filename))
 
 if __name__ == "__main__":

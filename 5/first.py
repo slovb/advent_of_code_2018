@@ -1,9 +1,15 @@
-def solve(data):
-    return sum(data)
+def solve(polymer):
+    state = []
+    for c in polymer:
+        if len(state) == 0 or state[-1] != c.swapcase():
+            state.append(c)
+        else:
+            state.pop()
+    return len(state)
 
 def read(filename):
     with open(filename, 'r') as f:
-        return [int(l) for l in f.readlines()]
+        return "".join(f.readlines()).strip("\n")
 
 def main(filename):
     return solve(read(filename))

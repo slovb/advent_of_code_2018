@@ -38,7 +38,7 @@ def solve(data):
         if k not in overlap:
             return k
 
-def main (filename):
+def main(filename):
     return solve(read(filename))
 
 if __name__ == "__main__":

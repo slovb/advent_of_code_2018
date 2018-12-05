@@ -34,7 +34,7 @@ def solve(data):
                     claims[p] += 1
     return overlap
 
-def main (filename):
+def main(filename):
     return solve(read(filename))
 
 if __name__ == "__main__":
