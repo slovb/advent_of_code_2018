@@ -4,7 +4,6 @@ def solve(players, num_marbles):
     score = [0] * players
     current = 0
     player = 0
-    milestone = 10
     for marble in range(1, num_marbles + 1):
         if not marble % magic == 0:
             current = (current + 2) % len(state)
@@ -15,9 +14,6 @@ def solve(players, num_marbles):
             m = state.pop(current)
             score[player] += m
         player = (player + 1) % players
-        if marble > milestone:
-            print marble
-            milestone *= 2
     return max(score)
 
 def read(filename):
