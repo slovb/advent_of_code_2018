@@ -1,3 +1,4 @@
+"""
 def calc(total, size):
     best_x = 0
     best_y = 0
@@ -9,6 +10,7 @@ def calc(total, size):
             if t > best_t:
                 best_x, best_y, best_t = x, y, t
     return best_x, best_y, best_t
+    """
 
 def power(x, y, serial):
     rack_id = x + 10
@@ -19,28 +21,68 @@ def power(x, y, serial):
     p -= 5
     return p
 
-def solve(serial):
+def build_value_function(serial, limit):
     cache = {}
-    def total(x, y, size):
+    for y in range(1, limit + 1):
+        for x in range(1, limit + 1):
+            cache[(x, y)] = power(x, y, serial)
+    def value(x, y):
+        return cache[(x, y)]
+    return value
+
+def build_total_function(value, previous, size):
+    if size == 1:
+        return value
+    rows = {}
+    cols = {}
+    def total(x, y):
         p = 0
-        for j in range(size):
-            for i in range(size):
-                pos = (x + i, y + j)
-                if pos not in cache:
-                    cache[pos] = power(x + i, y + j, serial)
-                p += cache[pos]
-        return p
+        if (x, y) in previous:
+            p = previous[(x, y)]
+        xmax = x + size - 1
+        ymax = y + size - 1
+        # sum row
+        r = 0
+        if (x - 1, y) in rows:
+            r = rows[(x - 1, y)]
+            r -= value(x - 1, ymax)
+            r += value(xmax - 1, ymax)
+        else:
+            for i in range(size - 1):
+                r += value(x + i, ymax)
+        rows[(x, y)] = r
+        # sum col
+        c = 0
+        if (x, y - 1) in cols:
+            c = cols[(x, y - 1)]
+            c -= value(xmax, y - 1)
+            c += value(xmax, ymax - 1)
+        else:
+            for i in range(size - 1):
+                c += value(xmax, y + i)
+        cols[(x, y)] = c
+        # sum total
+        return p + r + c + value(x + size - 1, y + size - 1)
+    return total
+
+def solve(serial, limit = 300):
+    value = build_value_function(serial, limit)
     best_x = 1
     best_y = 1
     best_s = 1
-    best_t = total(best_x, best_y, best_s)
-    for s in range(1, 300 + 1):
-        print best_x, best_y, best_s, best_t
-        x, y, t = calc(total, s)
-        if t > best_t:
-            best_x, best_y, best_s, best_t = x, y, s, t
+    best_t = -5
+    previous = {}
+    for s in range(1, limit + 1):
+        current = {}
+        total = build_total_function(value, previous, s)
+        for y in range(1, limit + 1 - s + 1):
+            for x in range(1, limit + 1 - s + 1):
+                t = total(x, y)
+                current[(x, y)] = t
+                if t > best_t:
+                    best_x, best_y, best_s, best_t = x, y, s, t
+        previous = current
     return best_x, best_y, best_s
-
 
 def main(serial):
     return solve(int(serial))
