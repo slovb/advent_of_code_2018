@@ -112,7 +112,6 @@ def read(filename):
         track, carts = process(lines)
         return track, carts
 
-
 def main(filename):
     track, carts = read(filename)
     return solve(track, carts)
