@@ -66,11 +66,14 @@ def find(unit, ground, units, targets):
             if a not in ground or a in units or a in mem:
                 continue
             elif a in targets:
+                #print "FOUND"
                 paths.append(mem + [a])
                 static['limit'] = min(1 + len(mem), static['limit'])
             else:
+                #print unit.position(), mem + [a]
                 for path in finder(mem + [a], a):
-                    paths.append(path)
+                    if len(path) <= static['limit']:
+                        paths.append(path)
         return paths
     return finder([], (unit.x, unit.y))
 
@@ -88,13 +91,16 @@ def solve(ground, units):
                 if a not in units and a in ground:
                     adjacents.add(a)
         # find shortest paths
-        paths = find(u, ground, units, targets)
+        paths = find(u, ground, units, adjacents)
+        for path in paths:
+            print u.position(), path
+        exit()
         if len(paths) == 0: # can't move
             print "{} CANT MOVE".format(p)
             return # don't move
         best = paths[0]
         for path in paths[1:]:
-            # they are both of shortest length, thus sam length
+            # they are both of shortest length, thus same length
             for k in range(len(path)):
                 if best[k] != path[k]:
                     if best[k] > path[k]:
@@ -117,6 +123,7 @@ def solve(ground, units):
                 return
         print "{} NO ATTACK".format(u.position())
     print render(ground, units)
+    print " "
     i = 0
     while True:
         order = units.keys()
@@ -135,9 +142,9 @@ def solve(ground, units):
                 return i * sum([v.hp for v in units])
             move(u, targets)
             attack(u, targets)
-        print " "
         print render(ground, units)
-        return -1
+        print " "
+        return -1 # DEBUG
         i += 1
 
 def process(lines):
