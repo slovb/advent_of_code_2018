@@ -53,6 +53,9 @@ def render(ground, units):
         out.append("".join(line) + " " + " ".join(endline))
     return '\n'.join(out)
 
+def better(pa, pb):
+    return pa[1] < pb[1] or (pa[1] == pb[1] and pa[0] < pb[0])
+
 def find(unit, ground, units, targets):
     static = {
         'limit': float('Inf')
@@ -75,25 +78,19 @@ def find(unit, ground, units, targets):
         return paths
     paths = finder([], (unit.x, unit.y))
     # filter out long solutions
-    temp = []
+    shorts = []
     for p in paths:
         if len(p) <= static['limit']:
-            #return p # by the ordering of the solutions the first valid should
-                     # be best
-            temp.append(p)
-    if len(temp) == 0:
+            shorts.append(p)
+    if len(shorts) == 0:
         return None
-    paths = temp
-    # find best, should not be needed if order is proper
-    best = paths[0]
-    for path in paths[1:]:
-        # they are both of shortest length, thus same length
-        for k in range(len(path)):
-            if best[k] != path[k]:
-                if best[k] < path[k]:
-                    best = path
-                break
+    # filter out best end, and then return the first of those, in ordering
+    best = shorts[0]
+    for p in shorts[1:]:
+        if better(p[-1], best[-1]):
+            best = p
     return best
+
 
 def solve(ground, units):
     def move(u, targets):
@@ -131,14 +128,19 @@ def solve(ground, units):
             u.attack(best)
             if best.is_dead():
                 del units[(best.x, best.y)]
-        #else:
+        else:
             #print "{} NO ATTACK".format(u.position())
+            pass
+
     #print render(ground, units)
-    print " "
+    #print " "
     i = 0
+    x_max = max([p[0] for p in ground])
+    weight = lambda p: p[0] + p[1] * (x_max + 1)
     while True:
         order = units.keys()
-        order.sort()
+        order.sort(key=weight)
+
         for p in order:
             if p not in units: # dead
                 continue
@@ -150,14 +152,15 @@ def solve(ground, units):
                     targets[tp] = t
             if len(targets) == 0:
                 # Done!
-                print i, sum([v.hp for _, v in units.items()])
-                print render(ground, units)
+                #print i, sum([v.hp for _, v in units.items()])
+                #print render(ground, units)
                 return i * sum([v.hp for _, v in units.items()])
             move(u, targets)
             attack(u, targets)
+        i += 1
+        #print i
         #print render(ground, units)
         #print " "
-        i += 1
 
 def process(lines):
     ground = Set()
@@ -247,7 +250,7 @@ class Tester(unittest.TestCase):
         """
         self.example(initial, 28944)
 
-    def _test_example_6(self):
+    def test_example_6(self):
         initial = """
             #########
             #G......#
