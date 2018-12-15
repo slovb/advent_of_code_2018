@@ -4,8 +4,8 @@ def adjacent(x, y):
     return [
         (x, y - 1),
         (x - 1, y),
-        (x, y + 1),
         (x + 1, y),
+        (x, y + 1),
     ]
 
 class Unit():
@@ -66,16 +66,34 @@ def find(unit, ground, units, targets):
             if a not in ground or a in units or a in mem:
                 continue
             elif a in targets:
-                #print "FOUND"
                 paths.append(mem + [a])
                 static['limit'] = min(1 + len(mem), static['limit'])
             else:
-                #print unit.position(), mem + [a]
                 for path in finder(mem + [a], a):
                     if len(path) <= static['limit']:
                         paths.append(path)
         return paths
-    return finder([], (unit.x, unit.y))
+    paths = finder([], (unit.x, unit.y))
+    # filter out long solutions
+    temp = []
+    for p in paths:
+        if len(p) <= static['limit']:
+            #return p # by the ordering of the solutions the first valid should
+                     # be best
+            temp.append(p)
+    if len(temp) == 0:
+        return None
+    paths = temp
+    # find best, should not be needed if order is proper
+    best = paths[0]
+    for path in paths[1:]:
+        # they are both of shortest length, thus same length
+        for k in range(len(path)):
+            if best[k] != path[k]:
+                if best[k] < path[k]:
+                    best = path
+                break
+    return best
 
 def solve(ground, units):
     def move(u, targets):
@@ -86,43 +104,36 @@ def solve(ground, units):
             ta = t.adjacent()
             for a in ta:
                 if a == p: # already adjacent
-                    print "{} ALREADY ADJACENT".format(p)
+                    #print "{} ALREADY ADJACENT".format(p)
                     return # don't move
                 if a not in units and a in ground:
                     adjacents.add(a)
-        # find shortest paths
-        paths = find(u, ground, units, adjacents)
-        for path in paths:
-            print u.position(), path
-        exit()
-        if len(paths) == 0: # can't move
-            print "{} CANT MOVE".format(p)
+        # find best shortest path
+        path = find(u, ground, units, adjacents)
+        if path is None: # can't move
+            #print "{} CANT MOVE".format(p)
             return # don't move
-        best = paths[0]
-        for path in paths[1:]:
-            # they are both of shortest length, thus same length
-            for k in range(len(path)):
-                if best[k] != path[k]:
-                    if best[k] > path[k]:
-                        best = path
-                    break
         # move
-        print "{} MOVE {}".format(p, best[0])
-        u.x, u.y = best[0]
-        units[best[0]] = u
+        #print "{} MOVE {}".format(p, path[0])
+        u.x, u.y = path[0]
+        units[path[0]] = u
         del units[p]
 
     def attack(u, targets):
+        best = None
         for a in u.adjacent():
             if a in targets:
                 t = targets[a]
-                print "{} ATTACK {}".format(u.position(), t.position())
-                u.attack(t)
-                if t.is_dead():
-                    del units[a]
-                return
-        print "{} NO ATTACK".format(u.position())
-    print render(ground, units)
+                if best is None or best.hp > t.hp:
+                    best = t
+        if best is not None:
+            #print "{} ATTACK {}".format(u.position(), best.position())
+            u.attack(best)
+            if best.is_dead():
+                del units[(best.x, best.y)]
+        #else:
+            #print "{} NO ATTACK".format(u.position())
+    #print render(ground, units)
     print " "
     i = 0
     while True:
@@ -139,12 +150,13 @@ def solve(ground, units):
                     targets[tp] = t
             if len(targets) == 0:
                 # Done!
-                return i * sum([v.hp for v in units])
+                print i, sum([v.hp for _, v in units.items()])
+                print render(ground, units)
+                return i * sum([v.hp for _, v in units.items()])
             move(u, targets)
             attack(u, targets)
-        print render(ground, units)
-        print " "
-        return -1 # DEBUG
+        #print render(ground, units)
+        #print " "
         i += 1
 
 def process(lines):
@@ -187,7 +199,7 @@ class Tester(unittest.TestCase):
         """
         self.example(initial, 27730)
 
-    def _test_example_2(self):
+    def test_example_2(self):
         initial = """
             #######
             #G..#E#
@@ -199,7 +211,7 @@ class Tester(unittest.TestCase):
         """
         self.example(initial, 36334)
 
-    def _test_example_3(self):
+    def test_example_3(self):
         initial = """
             #######
             #E..EG#
@@ -211,7 +223,7 @@ class Tester(unittest.TestCase):
         """
         self.example(initial, 39514)
 
-    def _test_example_4(self):
+    def test_example_4(self):
         initial = """
             #######
             #E.G#.#
@@ -223,7 +235,7 @@ class Tester(unittest.TestCase):
         """
         self.example(initial, 27755)
 
-    def _test_example_5(self):
+    def test_example_5(self):
         initial = """
             #######
             #.E...#
