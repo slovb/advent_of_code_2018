@@ -2,7 +2,7 @@ from sets import Set
 
 def adjacent(x, y):
     return [
-        (x, y + 1),
+        (x, y - 1),
         (x - 1, y),
         (x, y + 1),
         (x + 1, y),
