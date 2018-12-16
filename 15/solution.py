@@ -1,6 +1,7 @@
 from sets import Set
 
-def adjacent(x, y):
+def adjacent(p):
+    x, y = p
     return [
         (x, y - 1),
         (x - 1, y),
@@ -17,7 +18,7 @@ class Unit():
         self.y = y
 
     def adjacent(self):
-        return adjacent(self.x, self.y)
+        return adjacent((self.x, self.y))
 
     def attack(self, unit):
         unit.hp -= self.damage
@@ -56,64 +57,60 @@ def render(ground, units):
 def better(pa, pb):
     return pa[1] < pb[1] or (pa[1] == pb[1] and pa[0] < pb[0])
 
-def find(unit, ground, units, targets):
-    static = {
-        'limit': float('Inf')
-    }
-    def finder(mem, p):
-        if len(mem) > static['limit']:
-            return []
-        paths = []
-        adjacents = adjacent(p[0], p[1])
-        for a in adjacents:
-            if a not in ground or a in units or a in mem:
-                continue
-            elif a in targets:
-                paths.append(mem + [a])
-                static['limit'] = min(1 + len(mem), static['limit'])
-            else:
-                for path in finder(mem + [a], a):
-                    if len(path) <= static['limit']:
-                        paths.append(path)
-        return paths
-    paths = finder([], (unit.x, unit.y))
-    # filter out long solutions
-    shorts = []
-    for p in paths:
-        if len(p) <= static['limit']:
-            shorts.append(p)
-    if len(shorts) == 0:
-        return None
-    # filter out best end, and then return the first of those, in ordering
-    best = shorts[0]
-    for p in shorts[1:]:
-        if better(p[-1], best[-1]):
-            best = p
-    return best
+def find(unit, ground, units, goals):
+    x_max = max([p[0] for p in ground])
+    weight = lambda p: p[0] + p[1] * (x_max + 1)
 
+    best = {}
+    def search(candidates, l = 1, previous=None):
+        for c in candidates:
+            if c not in ground or c in units:
+                continue
+            if c not in best or (c in best and l < best[c]['length']):
+                    best[c] = {
+                        'length': l,
+                        'previous': previous,
+                    }
+                    search(adjacent(c), l + 1, c)
+    search(unit.adjacent())
+    
+    shortest = float('Inf')
+    goal = None
+    for g in goals:
+        if g in best and best[g]['length'] < shortest:
+            shortest = best[g]['length']
+            goal = g
+    if goal is None:
+        return None
+    while best[goal]['previous'] != None:
+        goal = best[goal]['previous']
+    return goal
 
 def solve(ground, units):
+    x_max = max([p[0] for p in ground])
+    weight = lambda p: p[0] + p[1] * (x_max + 1)
     def move(u, targets):
         p = u.position()
         # find adjacent
-        adjacents = Set()
+        adjacents = []
         for tp, t in targets.items():
             ta = t.adjacent()
             for a in ta:
                 if a == p: # already adjacent
                     #print "{} ALREADY ADJACENT".format(p)
                     return # don't move
-                if a not in units and a in ground:
-                    adjacents.add(a)
+                if a not in adjacents and a not in units and a in ground:
+                    adjacents.append(a)
+        adjacents.sort(key=weight)
         # find best shortest path
-        path = find(u, ground, units, adjacents)
-        if path is None: # can't move
+        next_p = find(u, ground, units, adjacents)
+        if next_p is None: # can't move
             #print "{} CANT MOVE".format(p)
             return # don't move
         # move
         #print "{} MOVE {}".format(p, path[0])
-        u.x, u.y = path[0]
-        units[path[0]] = u
+        u.x, u.y = next_p
+        units[next_p] = u
         del units[p]
 
     def attack(u, targets):
@@ -135,8 +132,6 @@ def solve(ground, units):
     #print render(ground, units)
     #print " "
     i = 0
-    x_max = max([p[0] for p in ground])
-    weight = lambda p: p[0] + p[1] * (x_max + 1)
     while True:
         order = units.keys()
         order.sort(key=weight)
