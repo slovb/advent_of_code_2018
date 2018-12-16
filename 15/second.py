@@ -60,7 +60,7 @@ def better(pa, pb):
 def find(unit, ground, units, goals):
     x_max = max([p[0] for p in ground])
     weight = lambda p: p[0] + p[1] * (x_max + 1)
-
+    # BFS
     best = {}
     def search(candidates, l = 1, previous=None):
         for c in candidates:
@@ -73,12 +73,12 @@ def find(unit, ground, units, goals):
                     }
                     search(adjacent(c), l + 1, c)
     search(unit.adjacent())
-    
-    shortest = float('Inf')
+    # find the nearest, reachable
+    length = float('Inf')
     goal = None
     for g in goals:
-        if g in best and best[g]['length'] < shortest:
-            shortest = best[g]['length']
+        if g in best and best[g]['length'] < length:
+            length = best[g]['length']
             goal = g
     if goal is None:
         return None
@@ -86,7 +86,7 @@ def find(unit, ground, units, goals):
         goal = best[goal]['previous']
     return goal
 
-def solve(ground, units):
+def simulate(ground, units):
     x_max = max([p[0] for p in ground])
     weight = lambda p: p[0] + p[1] * (x_max + 1)
     def move(u, targets):
@@ -97,7 +97,6 @@ def solve(ground, units):
             ta = t.adjacent()
             for a in ta:
                 if a == p: # already adjacent
-                    #print "{} ALREADY ADJACENT".format(p)
                     return # don't move
                 if a not in adjacents and a not in units and a in ground:
                     adjacents.append(a)
@@ -105,10 +104,8 @@ def solve(ground, units):
         # find best shortest path
         next_p = find(u, ground, units, adjacents)
         if next_p is None: # can't move
-            #print "{} CANT MOVE".format(p)
             return # don't move
         # move
-        #print "{} MOVE {}".format(p, path[0])
         u.x, u.y = next_p
         units[next_p] = u
         del units[p]
@@ -121,16 +118,13 @@ def solve(ground, units):
                 if best is None or best.hp > t.hp:
                     best = t
         if best is not None:
-            #print "{} ATTACK {}".format(u.position(), best.position())
             u.attack(best)
             if best.is_dead():
+                if best.team == 'E':
+                    return False
                 del units[(best.x, best.y)]
-        else:
-            #print "{} NO ATTACK".format(u.position())
-            pass
+        return True
 
-    #print render(ground, units)
-    #print " "
     i = 0
     while True:
         order = units.keys()
@@ -147,15 +141,26 @@ def solve(ground, units):
                     targets[tp] = t
             if len(targets) == 0:
                 # Done!
-                #print i, sum([v.hp for _, v in units.items()])
-                #print render(ground, units)
                 return i * sum([v.hp for _, v in units.items()])
             move(u, targets)
-            attack(u, targets)
+            elf_survived = attack(u, targets)
+            if not elf_survived:
+                return None
         i += 1
-        #print i
-        #print render(ground, units)
-        #print " "
+
+def solve(ground, units):
+    elf_power = 3
+    val = None
+    while val is None:
+        units_copy = {}
+        for p, u in units.items():
+            v = Unit(u.team, u.x, u.y)
+            if v.team == 'E':
+                v.damage = elf_power
+            units_copy[p] = v
+        val = simulate(ground, units_copy)
+        elf_power += 1
+    return val
 
 def process(lines):
     ground = Set()
@@ -195,19 +200,7 @@ class Tester(unittest.TestCase):
             #.....#
             #######
         """
-        self.example(initial, 27730)
-
-    def test_example_2(self):
-        initial = """
-            #######
-            #G..#E#
-            #E#E.E#
-            #G.##.#
-            #...#E#
-            #...E.#
-            #######
-        """
-        self.example(initial, 36334)
+        self.example(initial, 4988)
 
     def test_example_3(self):
         initial = """
@@ -219,7 +212,7 @@ class Tester(unittest.TestCase):
             #..E#.#
             #######
         """
-        self.example(initial, 39514)
+        self.example(initial, 31284)
 
     def test_example_4(self):
         initial = """
@@ -231,7 +224,7 @@ class Tester(unittest.TestCase):
             #...E.#
             #######
         """
-        self.example(initial, 27755)
+        self.example(initial, 3478)
 
     def test_example_5(self):
         initial = """
@@ -243,7 +236,7 @@ class Tester(unittest.TestCase):
             #...#G#
             #######
         """
-        self.example(initial, 28944)
+        self.example(initial, 6474)
 
     def test_example_6(self):
         initial = """
@@ -257,7 +250,7 @@ class Tester(unittest.TestCase):
             #.....G.#
             #########
         """
-        self.example(initial, 18740)
+        self.example(initial, 1140)
 
 if __name__ == "__main__":
     import sys
