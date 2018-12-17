@@ -28,7 +28,7 @@ def render(limits, spring, claymap, water):
     out = []
     for y in range(limits['min_y'], limits['max_y'] + 1):
         line = []
-        for x in range(limits['min_x'], limits['max_x'] + 1):
+        for x in range(limits['min_x'] - 1, limits['max_x'] + 2):
             p = (x, y)
             if p == spring:
                 line.append('+')
@@ -75,78 +75,92 @@ def map_clay(clay):
 
 def solve(spring, clay):
     claymap, limits = map_clay(clay)
-    water = {
-        (spring): WaterNode(spring)
-    }
+    startNode = WaterNode(spring)
+    spreadStack = [startNode]
+    water = { (spring): startNode }
+    def stack(w):
+        spreadStack.append(w)
+    def propagate_settle_left(w):
+        if w.right() in water:
+            u = water[w.right()]
+            if not u.settle_left:
+                u.settle_left = True
+                propagate_settle_left(u)
+                stack(u)
+    def propagate_settle_right(w):
+        if w.left() in water:
+            u = water[w.left()]
+            if not u.settle_right:
+                u.settle_right = True
+                propagate_settle_right(u)
+                stack(u)
+
     def spread(w):
         p = w.position()
         if w.settled():
             if w.above() in claymap:
                 pass
-            elif w.above() in water: # if water is falling from above, make
-                                     # sure it spreads
+            elif w.above() in water: # water falls from above, thus spread
                 above = water[w.above()]
                 above.settle_bottom = True
-                spread(above)
+                stack(above)
         elif w.settle_bottom:
             if not w.settle_left:
                 if w.left() in claymap:
                     w.settle_left = True
-                    spread(w)
+                    propagate_settle_left(w)
+                    stack(w)
                 elif w.left() in water:
                     left = water[w.left()]
                     if left.settle_left:
                         w.settle_left = True
-                        spread(w)
+                        propagate_settle_left(w)
+                        stack(w)
                 else:
                     left = WaterNode(w.left())
                     water[w.left()] = left
-                    spread(left)
-            else: # propagate settling
-                if w.right() in water:
-                    right = water[w.right()]
-                    if not right.settle_left:
-                        right.settle_left = True
-                        spread(right)
+                    stack(left)
 
             if not w.settle_right:
                 if w.right() in claymap:
                     w.settle_right = True
-                    spread(w)
+                    propagate_settle_right(w)
+                    stack(w)
                 elif w.right() in water:
                     right = water[w.right()]
                     if right.settle_right:
                         w.settle_right = True
-                        spread(w)
+                        propagate_settle_right(w)
+                        stack(w)
                 else:
                     right = WaterNode(w.right())
                     water[w.right()] = right
-                    spread(right)
-            else: # propagate settling
-                if w.left() in water:
-                    left = water[w.left()]
-                    if not left.settle_right:
-                        left.settle_right = True
-                        spread(left)
+                    stack(right)
         else:
             if w.below() in claymap:
                 w.settle_bottom = True
-                spread(w)
+                stack(w)
             elif w.below() in water:
                 below = water[w.below()]
-                spread(below)
+                stack(below)
             else:
                 below = WaterNode(w.below())
                 if below.y <= limits['max_y']:
                     water[below.position()] = below
-                    spread(below)
-    spread(water[spring])
-    print render(limits, spring, claymap, water)
-    count = len(water)
-    for position in water:
+                    stack(below)
+    while len(spreadStack) > 0:
+        spread(spreadStack.pop(0))
+    #print render(limits, spring, claymap, water)
+    positions = water.keys()
+    for position in positions:
         if position[1] < limits['min_y']:
-            count -= 1
-    return count
+            del water[position]
+    count = 0
+    for p, w in water.items():
+        if w.settled():
+            count += 1
+    print "{} water tiles have settled".format(count)
+    return len(water)
 
 def process(line):
     import re
