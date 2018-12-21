@@ -82,15 +82,6 @@ def call(reg, (op, data)):
         val = eqrr(reg, data)
     reg[data[2]] = val
 
-def step(program, ip, reg):
-    reg = [0]*6
-    reg[0] = initial
-    while reg[ip] < len(program):
-        print reg
-        call(reg, program[reg[ip]])
-        reg[ip] += 1
-    return initial
-
 def solve(program, ip):
     from sets import Set
     solutions = Set()
@@ -101,7 +92,9 @@ def solve(program, ip):
     while True:
         call(reg, program[reg[ip]])
         reg[ip] += 1
-        if reg[ip] == 29:
+        if reg[ip] == 29: # op 29 is the end if reg[0] == reg[1]
+            # reg[0] is our unmodified input
+            # reg[1] at 29 thus are the solutions
             if first is None:
                 first = reg[1]
                 print "First solution {}".format(first)
@@ -117,7 +110,7 @@ def verify(program, ip, i):
     while reg[ip] < plength:
         call(reg, program[reg[ip]])
         reg[ip] += 1
-    return i
+    return True
 
 def read(filename):
     import re
