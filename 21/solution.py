@@ -24,7 +24,6 @@ def bori(reg, data):
 
 def setr(reg, data):
     return reg[data[0]]
-    return o
 
 def seti(reg, data):
     return data[0]
